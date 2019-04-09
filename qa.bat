@@ -1,0 +1,2 @@
+python qa.py
+pause
