@@ -135,20 +135,24 @@ def fAll():
 	print(Fore.RED, str(errorcount)+' Log Errors Found', Style.RESET_ALL)
 	print(Fore.YELLOW, str(warncount)+' Log Warnings Found', Style.RESET_ALL)
 
+def fRXPCheck():
 	#account for all rxp files
 	openLog.seek(0)
 	rxpCount=0
 	rxpFiles=[]
 	rxpPathStart=0
 	rxpPathEnd=0
+	rxpSearch = re.compile(r'\d{6}_\d{6}.rxp')
 	for line in openLog:
 		if ".rxp" in line:
 			rxpCount+=1
 			rxpPathStart=line.find("/03")
 			rxpPathEnd=line.find("'<")
 			rxpFiles.append(line[rxpPathStart:rxpPathEnd])
-
-	print(Fore.GREEN, str(rxpCount)+" RXP Files Generated\n", Style.RESET_ALL)
+#	for line in openLog:
+#		if rxpSearch.search(line):
+#			rxpFiles.append(rxpSearch.search(line)[0])
+	#print(Fore.GREEN, str(rxpCount)+" RXP Files Generated\n", Style.RESET_ALL)
 	rxpFound=0
 	for rxpName in rxpFiles:
 		exists = os.path.isfile("."+rxpName)
@@ -160,13 +164,40 @@ def fAll():
 	if rxpCount == rxpFound: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
 	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
 
+def fCamCheck():
+	openLog.seek(0)
+	eifName = []
+	eifSearch = re.compile(r'\d{6}_\d{6}.eif')
+	eifFound = 0
+	for line in openLog:
+		if eifSearch.search(line):
+			eifName.append(eifSearch.search(line)[0])
+	eifFiles = glob.glob("04_CAM_RAW/01_EIF/**/*.eif")
+	#print(eifName)
+	#print(eifFiles)
+	eifCount = len(eifName)
+	for i in eifName:
+		eifCheck = 0
+		for x in eifFiles:
+			if i in x:
+				eifCheck = 1
+				break
+		if eifCheck == 1:
+			eifFound += 1
+		else:
+			print(Fore.RED, Back.BLACK,"EIF " + i +" Missing!", Style.RESET_ALL)
+	if eifFound == eifCount: print(Fore.GREEN, "All "+str(eifFound)+" EIF Files Found!", Style.RESET_ALL)
+	else: print(Fore.RED, "Error, check for missing EIF files!", Style.RESET_ALL)
+
 #os.chdir(logFolderPath[0])
 origDir = os.getcwd()
 for i in range(0,len(logFilePath)):
 	openLog = open(logFilePath[i], "r")
 	os.chdir(logFolderPath[i])
-	print("Riegl Project " + logFolderPath[i])
+	print("\nRiegl Project: " + logFolderPath[i])
 	fAll()
+	fRXPCheck()
+	fCamCheck()
 	openLog.close()
 	os.chdir(origDir)
 
