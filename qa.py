@@ -21,7 +21,7 @@ for x in range(0,len(logFilePath)):
 	logFolderPath.append(os.path.dirname(logFilePath[x]))
 #print(logFolderPath)
 
-def fAll():
+def fIMUCheck():
 	#vars
 	alignCheck = 0
 	alignTime = []
@@ -136,33 +136,57 @@ def fAll():
 	print(Fore.YELLOW, str(warncount)+' Log Warnings Found', Style.RESET_ALL)
 
 def fRXPCheck():
-	#account for all rxp files
 	openLog.seek(0)
-	rxpCount=0
-	rxpFiles=[]
-	rxpPathStart=0
-	rxpPathEnd=0
-	rxpSearch = re.compile(r'\d{6}_\d{6}.rxp')
+	rxpName = []
+	rxpSearch = re.compile(r'\d{6}_\d{6}_.{0,}.rxp')
+	rxpFound = 0
 	for line in openLog:
-		if ".rxp" in line:
-			rxpCount+=1
-			rxpPathStart=line.find("/03")
-			rxpPathEnd=line.find("'<")
-			rxpFiles.append(line[rxpPathStart:rxpPathEnd])
+		if rxpSearch.search(line):
+			rxpName.append(rxpSearch.search(line)[0])
+	rxpFiles = glob.glob("03_RIEGL_RAW/02_RXP/**/*.rxp")
+	rxpCount = len(rxpName)
+	for i in rxpName:
+		rxpCheck = 0
+		for x in rxpFiles:
+			if i in x:
+				rxpCheck = 1
+				break
+		if rxpCheck == 1:
+			rxpFound += 1
+		else:
+			print(Fore.RED, Back.BLACK,"RXP " + i +" Missing!", Style.RESET_ALL)
+	if rxpFound == rxpCount: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
+	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
+
+
+
+	#account for all rxp files
+#	openLog.seek(0)
+#	rxpCount=0
+#	rxpFiles=[]
+#	rxpPathStart=0
+#	rxpPathEnd=0
+#	rxpSearch = re.compile(r'\d{6}_\d{6}.rxp')
+#	for line in openLog:
+#		if ".rxp" in line:
+#			rxpCount+=1
+#			rxpPathStart=line.find("/03")
+#			rxpPathEnd=line.find("'<")
+#			rxpFiles.append(line[rxpPathStart:rxpPathEnd])
 #	for line in openLog:
 #		if rxpSearch.search(line):
 #			rxpFiles.append(rxpSearch.search(line)[0])
 	#print(Fore.GREEN, str(rxpCount)+" RXP Files Generated\n", Style.RESET_ALL)
-	rxpFound=0
-	for rxpName in rxpFiles:
-		exists = os.path.isfile("."+rxpName)
-		if exists: 
-			rxpFound+=1
-		else: 
-			print(Fore.RED, Back.BLACK,"RXP '"+rxpName+"' Missing!", Style.RESET_ALL)
+#	rxpFound=0
+#	for rxpName in rxpFiles:
+#		exists = os.path.isfile("."+rxpName)
+#		if exists: 
+#			rxpFound+=1
+#		else: 
+#			print(Fore.RED, Back.BLACK,"RXP '"+rxpName+"' Missing!", Style.RESET_ALL)
 			
-	if rxpCount == rxpFound: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
-	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
+#	if rxpCount == rxpFound: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
+#	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
 
 def fCamCheck():
 	openLog.seek(0)
@@ -173,8 +197,6 @@ def fCamCheck():
 		if eifSearch.search(line):
 			eifName.append(eifSearch.search(line)[0])
 	eifFiles = glob.glob("04_CAM_RAW/01_EIF/**/*.eif")
-	#print(eifName)
-	#print(eifFiles)
 	eifCount = len(eifName)
 	for i in eifName:
 		eifCheck = 0
@@ -189,13 +211,14 @@ def fCamCheck():
 	if eifFound == eifCount: print(Fore.GREEN, "All "+str(eifFound)+" EIF Files Found!", Style.RESET_ALL)
 	else: print(Fore.RED, "Error, check for missing EIF files!", Style.RESET_ALL)
 
-#os.chdir(logFolderPath[0])
 origDir = os.getcwd()
+#recursively search and open files
 for i in range(0,len(logFilePath)):
 	openLog = open(logFilePath[i], "r")
+	#change working directory to project folder
 	os.chdir(logFolderPath[i])
 	print("\nRiegl Project: " + logFolderPath[i])
-	fAll()
+	fIMUCheck()
 	fRXPCheck()
 	fCamCheck()
 	openLog.close()
