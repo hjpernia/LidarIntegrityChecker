@@ -1,18 +1,14 @@
 import glob
 import os
 import re
+import csv
 from colorama import init, Fore, Back, Style
 from datetime import datetime, timedelta
 init()
 
-#regex
-dateSearch = re.compile(r'[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])')
-timeSearch = re.compile(r'[012]\d:\d{2}:\d{2}\.\d{3}')
-dateTimeSearch = re.compile(r'(([12]\d{3})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\ ([012]\d):(\d{2}):(\d{2})\.(\d{3}))')
-
 #find rpl files
 logFilePath = glob.glob('**/*.rpl', recursive=True)
-#print(logFilePath)
+
 for x in logFilePath:
 	if "08_RECEIVED" in x:
 		logFilePath.remove(x)
@@ -28,8 +24,14 @@ def fIMUCheck():
 	DTF = '%Y-%m-%d %H:%M:%S.%f'
 	takeoff = 0
 	logNum = 0
+	
+	#regex
+	dateSearch = re.compile(r'[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])')
+	timeSearch = re.compile(r'[012]\d:\d{2}:\d{2}\.\d{3}')
+	dateTimeSearch = re.compile(r'(([12]\d{3})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])\ ([012]\d):(\d{2}):(\d{2})\.(\d{3}))')
 
 	openLog.seek(0)
+
 	for line in openLog: 	
 		startDate = dateTimeSearch.search(line).group()
 		if startDate:
@@ -55,6 +57,7 @@ def fIMUCheck():
 		if "Working-Logging" in line and alignCheck != 1 and takeoff == 1:
 			logNum += 1
 			print(Fore.YELLOW, "Warning! IMU degraded during part of flight!", Style.RESET_ALL)
+
 	openLog.seek(0)
 	#reverse search for end of last record
 	for line in reversed(list(openLog)):
@@ -64,14 +67,12 @@ def fIMUCheck():
 			endIMU = dateTimeSearch.search(line).group()
 			break
 
-
 	openLog.seek(0)
 	##get time offset
 	alignTimeScanner = datetime.strptime(alignTime[0][0],DTF)
 	alignTimeGPS = datetime.strptime(alignTime[1][0],DTF)
 	timeOffset = alignTimeGPS-alignTimeScanner
 	##print(timeOffset)
-
 
 	openLog.seek(0)
 	#t04 date/time formatting conversion
@@ -158,36 +159,6 @@ def fRXPCheck():
 	if rxpFound == rxpCount: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
 	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
 
-
-
-	#account for all rxp files
-#	openLog.seek(0)
-#	rxpCount=0
-#	rxpFiles=[]
-#	rxpPathStart=0
-#	rxpPathEnd=0
-#	rxpSearch = re.compile(r'\d{6}_\d{6}.rxp')
-#	for line in openLog:
-#		if ".rxp" in line:
-#			rxpCount+=1
-#			rxpPathStart=line.find("/03")
-#			rxpPathEnd=line.find("'<")
-#			rxpFiles.append(line[rxpPathStart:rxpPathEnd])
-#	for line in openLog:
-#		if rxpSearch.search(line):
-#			rxpFiles.append(rxpSearch.search(line)[0])
-	#print(Fore.GREEN, str(rxpCount)+" RXP Files Generated\n", Style.RESET_ALL)
-#	rxpFound=0
-#	for rxpName in rxpFiles:
-#		exists = os.path.isfile("."+rxpName)
-#		if exists: 
-#			rxpFound+=1
-#		else: 
-#			print(Fore.RED, Back.BLACK,"RXP '"+rxpName+"' Missing!", Style.RESET_ALL)
-			
-#	if rxpCount == rxpFound: print(Fore.GREEN, "All "+str(rxpFound)+" RXP Files Found!", Style.RESET_ALL)
-#	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
-
 def fCamCheck():
 	openLog.seek(0)
 	eifName = []
@@ -208,8 +179,43 @@ def fCamCheck():
 			eifFound += 1
 		else:
 			print(Fore.RED, Back.BLACK,"EIF " + i +" Missing!", Style.RESET_ALL)
-	if eifFound == eifCount: print(Fore.GREEN, "All "+str(eifFound)+" EIF Files Found!", Style.RESET_ALL)
-	else: print(Fore.RED, "Error, check for missing EIF files!", Style.RESET_ALL)
+	if eifFound == eifCount and eifCount > 0: print(Fore.GREEN, "All "+str(eifFound)+" EIF Files Found!", Style.RESET_ALL)
+	elif eifFound != eifCount: print(Fore.RED, "Error, check for missing EIF files!", Style.RESET_ALL)
+	else: print(Fore.YELLOW, "No EIF files found. Camera present?", Style.RESET_ALL)
+	eifPop = 1
+	for x in eifFiles:
+		rowCount = 0
+		with open(x,  mode = 'r', newline = '') as eifOpen:
+			eifRead = csv.reader(eifOpen, escapechar = '"', delimiter = ';')		
+			rpyCheck, opkCheck, geoCheck = 1,1,1;	
+			for row in eifRead:
+				#print(row)
+				rowCount += 1
+				if rowCount > 3:
+					if not row[3] and row[4] and row[5]:
+						rpyCheck = 0
+					elif row[3] == 0 or row[4] == 0 or row[5] == 0:
+						rpyCheck = 0
+					if not  row[6] and row[7] and row[8]:
+						opkCheck = 0
+					elif row[6] == 0 or row[7] == 0 or row[8] == 0:
+						opkCheck = 0
+					if not  row[9] and row[10] and row[1]:
+						geoCheck=0	
+					elif row[9] == 0 or row[10] == 0 or row[11] == 0:
+						geoCheck = 0
+			if rpyCheck == 0:
+				print(Fore.RED, Back.BLACK,"\nRoll/Pitch/Yaw Values missing in " + x, Style.RESET_ALL)
+				eifPop = 0
+			if opkCheck == 0:
+				print(Fore.RED, Back.BLACK,"\nOmega/Phi/Kappa Values missing in " + x, Style.RESET_ALL)
+				eifPop = 0
+			if geoCheck == 0:
+				print(Fore.RED, Back.BLACK,"\nLat/Lon/Alt Values missing in " + x, Style.RESET_ALL)
+				eifPop = 0
+		eifOpen.close()
+	if eifPop == 1 and eifFound > 0:
+		print(Fore.GREEN, "All EIF Files Populated!", Style.RESET_ALL)	
 
 origDir = os.getcwd()
 #recursively search and open files
