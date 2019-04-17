@@ -192,17 +192,17 @@ def fCamCheck():
 				#print(row)
 				rowCount += 1
 				if rowCount > 3:
-					if not row[3] and row[4] and row[5]:
+					if not row[3] or not row[4] or not row[5]:
 						rpyCheck = 0
-					elif row[3] == 0 or row[4] == 0 or row[5] == 0:
+					elif row[3] == '0' or row[4] == '0' or row[5] == '0':
 						rpyCheck = 0
-					if not  row[6] and row[7] and row[8]:
+					if not row[6] or not row[7] or not row[8]:
 						opkCheck = 0
-					elif row[6] == 0 or row[7] == 0 or row[8] == 0:
+					elif row[6] == '0' or row[7] == '0' or row[8] == '0':
 						opkCheck = 0
-					if not  row[9] and row[10] and row[1]:
+					if not row[9] or not row[10] or not row[11]:
 						geoCheck=0	
-					elif row[9] == 0 or row[10] == 0 or row[11] == 0:
+					elif row[9] == '0' or row[10] == '0' or row[11] == '0':
 						geoCheck = 0
 			if rpyCheck == 0:
 				print(Fore.RED, Back.BLACK,"\nRoll/Pitch/Yaw Values missing in " + x, Style.RESET_ALL)
