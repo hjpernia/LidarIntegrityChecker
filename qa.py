@@ -11,11 +11,11 @@ logFilePath = glob.glob('**/*.rpl', recursive=True)
 
 for x in logFilePath:
 	if "08_RECEIVED" in x:
+		#eliminate duplicate rpl files stored in 08_RECIEVED folder
 		logFilePath.remove(x)
 logFolderPath = []
 for x in range(0,len(logFilePath)):
 	logFolderPath.append(os.path.dirname(logFilePath[x]))
-#print(logFolderPath)
 
 def fIMUCheck():
 	#vars
@@ -24,7 +24,7 @@ def fIMUCheck():
 	DTF = '%Y-%m-%d %H:%M:%S.%f'
 	takeoff = 0
 	logNum = 0
-	
+
 	#regex
 	dateSearch = re.compile(r'[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])')
 	timeSearch = re.compile(r'[012]\d:\d{2}:\d{2}\.\d{3}')
@@ -32,7 +32,7 @@ def fIMUCheck():
 
 	openLog.seek(0)
 
-	for line in openLog: 	
+	for line in openLog:
 		startDate = dateTimeSearch.search(line).group()
 		if startDate:
 			break
@@ -72,19 +72,14 @@ def fIMUCheck():
 	alignTimeScanner = datetime.strptime(alignTime[0][0],DTF)
 	alignTimeGPS = datetime.strptime(alignTime[1][0],DTF)
 	timeOffset = alignTimeGPS-alignTimeScanner
-	##print(timeOffset)
 
-	openLog.seek(0)
 	#t04 date/time formatting conversion
 	startIMU = datetime.strptime(startIMU,DTF)
 	endIMU = datetime.strptime(endIMU,DTF)
-	startIMU = startIMU + timeOffset 
+	startIMU = startIMU + timeOffset
 	endIMU = endIMU + timeOffset
 	startIMU = startIMU.replace(second=0, microsecond=0)
 	endIMU = endIMU.replace(second=0, microsecond=0)
-	##print(startIMU)
-	##startT04Crit = re.sub(':|\.','',startIMU)
-	##endT04Crit = re.sub(':|\.','',endIMU)
 
 	#flight time delta
 	staticTime = int(input("Input Static Time in Minutes: "))
@@ -110,7 +105,7 @@ def fIMUCheck():
 				t04Count += 1
 				t04Check = 1
 		#print error if file missing
-		if t04Check == 0: 
+		if t04Check == 0:
 			if i < staticTime or i > int(t04Delta.seconds/60)-staticTime:
 				print(Fore.YELLOW, "Static " + t04Name + ".T04 Missing!", Style.RESET_ALL)
 			else: print(Fore.RED, "In Flight " + t04Name + ".T04 Missing!", Style.RESET_ALL)
@@ -118,34 +113,36 @@ def fIMUCheck():
 	#total discovered t04s
 	print(Fore.GREEN, "\n " + str(t04Count) + " T04 Files Found", Style.RESET_ALL)
 
-
 	openLog.seek(0)
+	
 	#additionl vars
 	errorcount = 0
 	warncount = 0
 
 	#Search rpl file for errors/warnings
-
 	for line in openLog:
-		if "<!>" in line: 
+		if "<!>" in line:
 			warncount+=1
-		if "[x]" in line: 
+		if "[x]" in line:
 			errorcount+=1
 			##print(Fore.RED, Back.BLACK, line, Style.RESET_ALL)
-			
+
 	print(Fore.RED, str(errorcount)+' Log Errors Found', Style.RESET_ALL)
 	print(Fore.YELLOW, str(warncount)+' Log Warnings Found', Style.RESET_ALL)
 
 def fRXPCheck():
+	##check reported rxp files are present in file structure##
 	openLog.seek(0)
 	rxpName = []
 	rxpSearch = re.compile(r'\d{6}_\d{6}_.{0,}.rxp')
 	rxpFound = 0
+	#search log for reported rxp files
 	for line in openLog:
 		if rxpSearch.search(line):
 			rxpName.append(rxpSearch.search(line)[0])
 	rxpFiles = glob.glob("03_RIEGL_RAW/02_RXP/**/*.rxp")
 	rxpCount = len(rxpName)
+	#compare reported rxp and existing rxps
 	for i in rxpName:
 		rxpCheck = 0
 		for x in rxpFiles:
@@ -160,15 +157,19 @@ def fRXPCheck():
 	else: print(Fore.RED, "Error, check for missing RXP files!", Style.RESET_ALL)
 
 def fCamCheck():
+	##check reported eif files are present in file structure##
 	openLog.seek(0)
 	eifName = []
 	eifSearch = re.compile(r'\d{6}_\d{6}.eif')
 	eifFound = 0
+	#search log for reported eif files
 	for line in openLog:
 		if eifSearch.search(line):
 			eifName.append(eifSearch.search(line)[0])
+	#grab filenames of all existing eif files
 	eifFiles = glob.glob("04_CAM_RAW/01_EIF/**/*.eif")
 	eifCount = len(eifName)
+	#compare reported eif and existing eifs
 	for i in eifName:
 		eifCheck = 0
 		for x in eifFiles:
@@ -182,16 +183,23 @@ def fCamCheck():
 	if eifFound == eifCount and eifCount > 0: print(Fore.GREEN, "All "+str(eifFound)+" EIF Files Found!", Style.RESET_ALL)
 	elif eifFound != eifCount: print(Fore.RED, "Error, check for missing EIF files!", Style.RESET_ALL)
 	else: print(Fore.YELLOW, "No EIF files found. Camera present?", Style.RESET_ALL)
+
+	##now check contents of eif file##
 	eifPop = 1
+	#loop through all eif files in project
 	for x in eifFiles:
 		rowCount = 0
+		#open eif file
 		with open(x,  mode = 'r', newline = '') as eifOpen:
-			eifRead = csv.reader(eifOpen, escapechar = '"', delimiter = ';')		
-			rpyCheck, opkCheck, geoCheck = 1,1,1;	
+			#escapechar used to solve problem with souble quotes present in file
+			eifRead = csv.reader(eifOpen, escapechar = '"', delimiter = ';')
+			rpyCheck, opkCheck, geoCheck = 1,1,1
+			#loop through eif row by row
 			for row in eifRead:
-				#print(row)
 				rowCount += 1
+				#skip first two header rows
 				if rowCount > 3:
+					#check all relevant columns are not empty and do not contain zeros
 					if not row[3] or not row[4] or not row[5]:
 						rpyCheck = 0
 					elif row[3] == '0' or row[4] == '0' or row[5] == '0':
@@ -201,9 +209,10 @@ def fCamCheck():
 					elif row[6] == '0' or row[7] == '0' or row[8] == '0':
 						opkCheck = 0
 					if not row[9] or not row[10] or not row[11]:
-						geoCheck=0	
+						geoCheck=0
 					elif row[9] == '0' or row[10] == '0' or row[11] == '0':
 						geoCheck = 0
+			#if check toggled false print error
 			if rpyCheck == 0:
 				print(Fore.RED, Back.BLACK,"\nRoll/Pitch/Yaw Values missing in " + x, Style.RESET_ALL)
 				eifPop = 0
@@ -214,8 +223,9 @@ def fCamCheck():
 				print(Fore.RED, Back.BLACK,"\nLat/Lon/Alt Values missing in " + x, Style.RESET_ALL)
 				eifPop = 0
 		eifOpen.close()
+	#check no eif data missing and eif files actually exist
 	if eifPop == 1 and eifFound > 0:
-		print(Fore.GREEN, "All EIF Files Populated!", Style.RESET_ALL)	
+		print(Fore.GREEN, "All EIF Files Populated!", Style.RESET_ALL)
 
 origDir = os.getcwd()
 #recursively search and open files
@@ -228,7 +238,5 @@ for i in range(0,len(logFilePath)):
 	fRXPCheck()
 	fCamCheck()
 	openLog.close()
+	#return to original parent directory
 	os.chdir(origDir)
-
-
-#openLog.close()
