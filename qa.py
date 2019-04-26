@@ -7,15 +7,19 @@ from datetime import datetime, timedelta
 init()
 
 #find rpl files
-logFilePath = glob.glob('**/*.rpl', recursive=True)
-
-for x in logFilePath:
-	if "08_RECEIVED" in x:
-		#eliminate duplicate rpl files stored in 08_RECIEVED folder
-		logFilePath.remove(x)
-logFolderPath = []
-for x in range(0,len(logFilePath)):
-	logFolderPath.append(os.path.dirname(logFilePath[x]))
+logFilePath = glob.glob('*.rpl')
+inProject = 0
+if logFilePath:
+	inProject = 1
+else: 
+	logFilePath = glob.glob('**/*.rpl', recursive=True)
+	for x in logFilePath:
+		if "08_RECEIVED" in x:
+			#eliminate duplicate rpl files stored in 08_RECIEVED folder
+			logFilePath.remove(x)
+	logFolderPath = []
+	for x in range(0,len(logFilePath)):
+		logFolderPath.append(os.path.dirname(logFilePath[x]))
 
 def fIMUCheck():
 	#vars
@@ -38,6 +42,7 @@ def fIMUCheck():
 			break
 
 	openLog.seek(0)
+	
 	for line in openLog:
 		#look for takeoff
 		if "System movement detected" in line:
@@ -227,16 +232,24 @@ def fCamCheck():
 	if eifPop == 1 and eifFound > 0:
 		print(Fore.GREEN, "All EIF Files Populated!", Style.RESET_ALL)
 
-origDir = os.getcwd()
-#recursively search and open files
-for i in range(0,len(logFilePath)):
-	openLog = open(logFilePath[i], "r")
-	#change working directory to project folder
-	os.chdir(logFolderPath[i])
-	print("\nRiegl Project: " + logFolderPath[i])
+if inProject == 1:
+	openLog = open(logFilePath[0], "r")
 	fIMUCheck()
 	fRXPCheck()
 	fCamCheck()
-	openLog.close()
-	#return to original parent directory
-	os.chdir(origDir)
+	openLog.close()	
+else:
+	origDir = os.getcwd()
+	#recursively search and open files
+	for i in range(0,len(logFilePath)):
+		openLog = open(logFilePath[i], "r")
+		#change working directory to project folder
+		os.chdir(logFolderPath[i])
+		print("\nRiegl Project: " + logFolderPath[i])
+		fIMUCheck()
+		fRXPCheck()
+		fCamCheck()
+		openLog.close()
+		#return to original parent directory
+		os.chdir(origDir)
+input("Press Enter to close")
