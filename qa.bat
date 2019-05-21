@@ -1,2 +1,2 @@
-python qa.py
+python LidarIntegrityChecker.py
 pause
