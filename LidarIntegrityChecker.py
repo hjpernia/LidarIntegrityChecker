@@ -63,8 +63,13 @@ def fIMUCheck():
 			logNum += 1
 			print(Fore.YELLOW, "Warning! IMU degraded during part of flight!", Style.RESET_ALL)
 	if startIMU == -1:
-		print(Fore.YELLOW, "AP20 IMU or No Takeoff Detected. Press Enter to continue without T04 check.", Style.RESET_ALL)
+		print(Fore.YELLOW, "AP20 IMU or No Takeoff Detected. Press Enter:", Style.RESET_ALL)
 		input("")
+		rawFile = glob.glob("02_INS-GPS_Raw/02_FULL/*/*.raw")
+		if rawFile:
+			print(Fore.GREEN, "IMU RAW File Found!", Style.RESET_ALL)
+		else:
+			print(Fore.RED, "No IMU RAW File Found!", Style.RESET_ALL)
 		return
 	openLog.seek(0)
 	#reverse search for end of last record
@@ -134,9 +139,10 @@ def fIMUCheck():
 		if "[x]" in line:
 			errorcount+=1
 			##print(Fore.RED, Back.BLACK, line, Style.RESET_ALL)
-
-	print(Fore.RED, str(errorcount)+' Log Errors Found', Style.RESET_ALL)
-	print(Fore.YELLOW, str(warncount)+' Log Warnings Found', Style.RESET_ALL)
+	if errorcount > 2:
+		print(Fore.RED, str(errorcount)+' Log Errors Found', Style.RESET_ALL)
+	if warncount > 2:
+		print(Fore.YELLOW, str(warncount)+' Log Warnings Found', Style.RESET_ALL)
 
 def fRXPCheck():
 	##check reported rxp files are present in file structure##
