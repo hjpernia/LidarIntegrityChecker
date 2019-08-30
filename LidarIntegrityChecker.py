@@ -23,6 +23,7 @@ else:
 
 def fIMUCheck():
 	#vars
+	timeSyncFail = 0
 	alignCheck = 0
 	alignTime = []
 	DTF = '%Y-%m-%d %H:%M:%S.%f'
@@ -56,7 +57,9 @@ def fIMUCheck():
 			alignTime = dateTimeSearch.findall(line)
 			##print(alignCheck)
 			if len(alignTime) <= 1:
-				print(Fore.RED, "Aligned without GPS Sync. I can't handle this yet!", Style.RESET_ALL)
+				print(Fore.RED, "Aligned without GPS Sync. T04 check terminated, check manually!", Style.RESET_ALL)
+				timeSyncFail = 1
+				return
 		if "Degraded" in line:
 			alignCheck = 0
 		if "Working-Logging" in line and alignCheck != 1 and takeoff == 1:
