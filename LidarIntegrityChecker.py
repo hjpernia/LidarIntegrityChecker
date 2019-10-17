@@ -2,10 +2,13 @@ import glob
 import os
 import re
 import csv
+import sys
 from colorama import init, Fore, Back, Style
 from datetime import datetime, timedelta
 init()
-
+if len(sys.argv) > 1:
+	droppedFile = sys.argv[1]
+	os.chdir(droppedFile)
 #find rpl files
 logFilePath = glob.glob('*.rpl')
 inProject = 0
@@ -13,6 +16,9 @@ if logFilePath:
 	inProject = 1
 else: 
 	logFilePath = glob.glob('**/*.rpl', recursive=True)
+	if len(logFilePath) == 0:
+		input("No Projects Found. Press Enter to Close.")
+		exit()
 	for x in logFilePath:
 		if "08_RECEIVED" in x:
 			#eliminate duplicate rpl files stored in 08_RECIEVED folder

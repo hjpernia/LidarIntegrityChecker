@@ -5,14 +5,14 @@
 ## Dependencies
 * Python
 * colorama
-	'''
+	```
 	pip install colorama
-	'''
+	```
 
 ## Current Features
-* Checks in*flight and static T04 files are present for APX*20. Can distinguish.
+* Checks in-flight and static T04 files are present for APX-20. Can distinguish.
 * IMU remains aligned throughout the flight
-* RAW file exists for AP*20
+* RAW file exists for AP-20
 * Prints errors and warnings from log
 * Checks number of RXP files logged against exists
 * Number of EIF files logged against exists
