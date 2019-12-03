@@ -36,6 +36,8 @@ def fIMUCheck():
 	takeoff = 0
 	logNum = 0
 	startIMU = -1
+	SPSMode = 0
+	DRMode = 0
 	#regex
 	dateSearch = re.compile(r'[12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])')
 	timeSearch = re.compile(r'[012]\d:\d{2}:\d{2}\.\d{3}')
@@ -71,6 +73,10 @@ def fIMUCheck():
 		if "Working-Logging" in line and alignCheck != 1 and takeoff == 1:
 			logNum += 1
 			print(Fore.YELLOW, "Warning! IMU degraded during part of flight!", Style.RESET_ALL)
+		if "GNSS SPS Mode" in line and takeoff == 1:
+			SPSMode += 1
+		if "DR Mode" in line and takeoff == 1:
+			DRMode +=1
 	if startIMU == -1:
 		print(Fore.YELLOW, "AP20 IMU or No Takeoff Detected. Press Enter:", Style.RESET_ALL)
 		input("")
@@ -137,6 +143,12 @@ def fIMUCheck():
 
 	openLog.seek(0)
 	
+	#Report GPS Problems
+	if SPSMode > 0:
+		print(Fore.YELLOW, "Warning! Count", SPSMode,"GNSS SPS Mode switches in flight. Check antenna installation and environment.", Style.RESET_ALL)
+	if DRMode > 0:
+		print(Fore.RED, "Error! Count", DRMode,"DR Mode switches in flight. Check antenna installation and refly.", Style.RESET_ALL)
+
 	#additionl vars
 	errorcount = 0
 	warncount = 0

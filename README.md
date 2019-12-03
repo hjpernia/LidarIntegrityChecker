@@ -12,6 +12,7 @@
 ## Current Features
 * Checks in-flight and static T04 files are present for APX-20. Can distinguish.
 * IMU remains aligned throughout the flight
+* Position remains in DGNSS during flight, reports SPS and DR modes
 * RAW file exists for AP-20
 * Prints errors and warnings from log
 * Checks number of RXP files logged against exists
