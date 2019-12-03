@@ -1,2 +1,0 @@
-python LidarIntegrityChecker.py
-pause
